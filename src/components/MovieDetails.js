@@ -1,13 +1,20 @@
-import {useEffect, useState} from "react";
+import {useEffect, useRef, useState} from "react";
 import StarRating from "./StarRating";
 import Loader from "./Loader";
+import {useKey} from "../hooks/useKey";
 
 const KEY = process.env.REACT_APP_OMDB_API_KEY;
 
 export default function MovieDetails({selectedId, onClose, onAddWatched, watched}) {
     const [movie, setMovie] = useState({});
     const [isLoading, setIsLoading] = useState(false);
-    const [userRating, setUserRating] = useState(0)
+    const [userRating, setUserRating] = useState(0);
+
+    const countRef = useRef(0);
+
+    useEffect(() => {
+        if (userRating) countRef.current++;
+    }, [userRating]);
 
     const isWatched = watched.map((movie) => movie.imdbID).includes(selectedId);
     const watchedUserRating = watched.find((movie) => movie.imdbID === selectedId)?.userRating;
@@ -18,11 +25,11 @@ export default function MovieDetails({selectedId, onClose, onAddWatched, watched
         Poster,
         Runtime: runtime,
         imdbRating,
-        Plot, plot,
+        Plot: plot,
         Released: released,
         Actors: actors,
         Director: director,
-        Genre, genre,
+        Genre: genre,
     } = movie;
 
     useEffect(() => {
@@ -55,18 +62,7 @@ export default function MovieDetails({selectedId, onClose, onAddWatched, watched
         }
     }, [title])
 
-    useEffect(() => {
-        function callBack(e) {
-            if (e.code === 'Escape') {
-                onClose();
-            }
-        }
-        document.addEventListener('keydown', callBack);
-
-        return function () {
-            document.removeEventListener('keydown', callBack);
-        }
-    }, [onClose]);
+    useKey('Escape', onClose);
 
     function movieHasBeenWatched(id) {
         const movie = watched.filter((item) => item.imdbID === id);
@@ -80,7 +76,8 @@ export default function MovieDetails({selectedId, onClose, onAddWatched, watched
             Poster,
             imdbRating: Number(imdbRating),
             runtime: Number(runtime.split(' ').at(0)),
-            userRating
+            userRating,
+            countRatingDecisions: countRef.current
         }
 
         onAddWatched(newWatchedMovie)

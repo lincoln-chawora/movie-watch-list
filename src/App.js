@@ -1,18 +1,17 @@
-import {useEffect, useState} from "react";
+import {useState} from "react";
 import Loader from "./components/Loader";
 import WatchedSummary from "./components/WatchedSummary";
 import MoviesList from "./components/MoviesList";
 import MovieDetails from "./components/MovieDetails";
-
-const KEY = process.env.REACT_APP_OMDB_API_KEY;
+import {useMovies} from "./hooks/useMovies";
+import {useLocalStorageState} from "./hooks/useLocalStorageState";
+import {NavBar, NumOfResults, Search} from "./components/Header";
 
 export default function App() {
-    const [watched, setWatched] = useState([]);
-    const [movies, setMovies] = useState([]);
-    const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState('');
     const [query, setQuery] = useState('');
     const [selectedId, setSelectedId] = useState( null);
+    const {movies, isLoading, error} = useMovies(query);
+    const [watched, setWatched] = useLocalStorageState([], 'watched');
 
     function handleSelectMovie(id) {
         setSelectedId(prevId => prevId === id ? null : id);
@@ -34,48 +33,6 @@ export default function App() {
             items.filter((item) => item.imdbID !== id)
         ));
     }
-
-    useEffect(() => {
-        const controller = new AbortController();
-
-        async function fetchMovies() {
-            try {
-                setIsLoading(true)
-                setError('');
-                // Fetch query data from api.
-                const response = await fetch(`http://www.omdbapi.com/?apikey=${KEY}&s=${query}`, {signal: controller.signal});
-
-                if (!response.ok) throw new Error('Something went wrong with fetching movies.');
-
-                // Get json data from api response.
-                const data = await response.json();
-
-                if (data.Response === 'False') throw new Error('Movie not found.');
-
-                // Save searched data into movies state.
-                setMovies(data.Search);
-                setError('');
-            } catch (e) {
-                if(e.name !== 'AbortError') {
-                    setError(e.message);
-                }
-            } finally {
-                setIsLoading(false);
-            }
-        }
-
-        if (query.length < 3) {
-            setMovies([])
-            setError('')
-            return;
-        }
-
-        fetchMovies();
-
-        return function () {
-            controller.abort();
-        }
-    }, [query]);
 
     return (
         <>
@@ -113,45 +70,6 @@ function ErrorMessage({message}) {
     return (
         <p className="error">
             <span>⛔️</span> {message}
-        </p>
-    )
-}
-
-function NavBar({children}) {
-  return (
-      <nav className="nav-bar">
-          <Logo />
-          {children}
-      </nav>
-  )
-}
-
-function Logo() {
-    return (
-        <div className="logo">
-            <span role="img">🍿</span>
-            <h1>usePopcorn</h1>
-        </div>
-    )
-}
-
-function Search({query, setQuery}) {
-
-    return (
-        <input
-            className="search"
-            type="text"
-            placeholder="Search movies..."
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-        />
-    )
-}
-
-function NumOfResults({movies}) {
-    return (
-        <p className="num-results">
-            Found <strong>{movies.length}</strong> results
         </p>
     )
 }

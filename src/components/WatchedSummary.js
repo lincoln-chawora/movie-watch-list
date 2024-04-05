@@ -21,7 +21,7 @@ export default function WatchedSummary({watched}) {
         },
         {
             emoji: '⏳',
-            value: avgRuntime
+            value: avgRuntime.toFixed(2)
         }
     ]
 
